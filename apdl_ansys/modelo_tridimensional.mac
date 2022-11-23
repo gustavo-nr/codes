@@ -1,0 +1,718 @@
+FINISH
+/CLEAR,NOSTART
+/PREP7
+pi = acos(-1)
+
+/REPLOT,RESIZE  
+/ANG,1,90,ZS,1
+/ANG,1,-90,YS,1
+/REP,FAST 
+
+TOFFST,273
+TREF,100
+!resina: TREF-40
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!      PARAMETERS      !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+PI = acos(-1)
+
+L1 = 55.0
+L2 = 437.0
+L3 = 67.0
+L5 = 227.0
+L6 = 243.0
+L7 = 160.0
+L10 = 630.0
+L4 = L5+L6+L7-L1-L2-L3
+
+D1 = 469.0
+D2 = 285.0
+D4 = 335.0
+D5 = 310.0
+D6 = 165.0
+D10 = 38.1
+D11 = 44.1
+D12 = 20.0
+A1 = 3.83
+H1 = 21.6
+rad1 = 6.0
+
+DTI = 25.4			! Diametro Interno
+DTE = 29.4			! Diametro Externo
+DT1 = 102.0			! Diametro inicial
+DT2 = 178.0			! Diametro final
+LTT1 = 200.0		! Comprimento ( CAMADA Nr 2 , TRECHO Nr 1)
+LTT2 = 300.0		! Comprimento ( CAMADA Nr 2 , TRECHO Nr 2)
+LTT3 = 200.0		! Comprimento ( CAMADA Nr 2 , TRECHO Nr 3)
+NDIV = 190
+
+REV_ANG = 22.5 ! Angles of revolution (2 x REV_ANG)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!                                                                          !!!
+!!!                              MATERIALS V001                              !!!
+!!!                                                                          !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+MPTEMP,,,,,,,,
+MPTEMP,1,0  
+
+!-------------------------- Material 1 - Armour Pot ---------------------------! 
+MPDATA,EX,1,,192500.0
+MPDATA,PRXY,1,,0.3
+TB,BISO,1,1,2,  
+TBTEMP,0
+TBDATA,,600.0,2000.0,,,,
+!------------------------------------------------------------------------------!
+
+!-------------------- Material 2 - Tensile Armor and Pipes --------------------!
+MPDATA,EX,2,,192500.0
+MPDATA,PRXY,2,,0.3
+TB,BISO,2,1,2,  
+TBTEMP,0
+TBDATA,,600.0,2000.0,,,,
+MPDATA,ALPX,2,,1.22e-5
+!------------------------------------------------------------------------------!
+
+!------------------  Material 3 - External Polymeric Sheath -------------------!
+MPDATA,EX,3,,330.769230769231
+MPDATA,PRXY,3,,0.45
+TB,MISO,3,1,9,0 
+TBTEMP,0
+TBPT,,0.0104,3.44
+TBPT,,0.0398,9.41
+TBPT,,0.0905,14.63
+TBPT,,0.1308,17.32
+TBPT,,0.1823,19.82
+TBPT,,0.2230,21.17
+TBPT,,0.3009,22.75
+TBPT,,0.4097,23.67
+TBPT,,0.8000,23.79
+!------------------------------------------------------------------------------!
+
+!-------------------------- Material 4 - Epoxy resin --------------------------!
+MPDATA,EX,4,,4700.0 
+MPDATA,PRXY,4,,0.4
+MPDATA,ALPX,4,,6.7e-5
+!TB,MISO,4,1,2,0 
+!TBTEMP,0
+!TBPT,,0.01276595744,60.0
+!------------------------------------------------------------------------------!
+
+!----------------------- Material 101 - Contact standard ----------------------!
+CF = 0.35
+MP,MU,101,CF
+!------------------------------------------------------------------------------!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!   GEOMETRIC MODEL    !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! Metallic Tube - Line
+*GET,kcont,KP,ALL,NXTL
+*GET,lcont,LINE,ALL,NXTL
+
+KSEL,NONE
+LSEL,NONE
+ASEL,NONE
+VSEL,NONE
+
+CSYS,0  
+WPCSYS,-1
+
+INC = LTT2/NDIV
+
+K,(kcont+1),DT1/2,0,0
+
+*DO,Y,LTT1,LTT2+LTT1,INC
+    theta = PI*(LTT1-Y)/(LTT2) + 3*PI/2
+    *GET,kcont,KP,ALL,NXTL
+    K,(kcont+1),1/2*((DT2-DT1)/2*(sin(theta)+1)+2*DT1/2),0,Y
+*ENDDO
+
+*GET,kcont,KP,ALL,NXTL
+K,(kcont+1),DT2/2,0,LTT1+LTT2+LTT3
+
+L,kcont,kcont+1
+
+KSEL,S,KP,,kcont-NDIV,kcont
+BSPLIN,ALL
+KSEL,ALL
+
+L,kcont-NDIV-1,kcont-NDIV
+LCOMB,ALL,,DELETE
+CM,TUBE_L,LINE
+
+!! Metallic Tube - Area
+*GET,kcont,KP,ALL,NXTL
+*GET,lcont,LINE,ALL,NXTL
+
+KSEL,NONE
+LSEL,NONE
+ASEL,NONE
+VSEL,NONE
+
+CYL4,DT1/2,0,DTE/2,,,,
+CM,TUBE_E_A,AREA
+
+*GET,kcont,KP,ALL,NXTL
+
+K,kcont+1,DT1/2+DTE/2,0,0
+K,kcont+2,DT1/2-DTE/2,0,0
+L,kcont+1,kcont+2
+
+K,kcont+3,DT1/2,DTE/2,0
+K,kcont+4,DT1/2,-DTE/2,0
+L,kcont+3,kcont+4
+
+*GET,lcont,LINE,ALL,NXTL
+
+CMSEL,S,TUBE_E_A,AREA
+
+ASBL,ALL,lcont-1
+ASBL,ALL,lcont
+
+CM,TUBE_E_A,AREA
+
+ASEL,NONE
+
+CYL4,DT1/2,0,DTI/2,,,,
+CM,TUBE_I_A,AREA
+
+ALLSEL,ALL
+ASBA,TUBE_E_A,TUBE_I_A,,,KEEP
+
+CMSEL,U,TUBE_I_A
+CM,TUBE_A,AREA
+
+!! Metallic Tube - Volume
+ALLSEL,ALL
+
+VDRAG,TUBE_A,,,,,,TUBE_L
+CM,TUBE_V,VOLUME
+
+VSEL,NONE
+VDRAG,TUBE_I_A,,,,,,TUBE_L
+CM,TUBE_I_V,VOLUME
+
+
+!! Resin - Area
+ALLSEL,ALL
+*GET,kcont,KP,ALL,NXTL
+*GET,lcont,LINE,ALL,NXTL
+*GET,acont,AREA,ALL,NXTL
+*GET,vcont,VOLU,ALL,NXTL
+KSEL,NONE
+LSEL,NONE
+ASEL,NONE
+VSEL,NONE
+
+CSYS,0  
+WPCSYS,-1
+
+K,kcont+1,D11/2,0,L7
+K,kcont+2,D6/2,0,L7
+K,kcont+3,D2/2-tan(A1*PI/180)*L6,0,L7
+K,kcont+4,D2/2,0,L7+L6
+K,kcont+5,D2/2,0,L7+L6+L5
+K,kcont+6,D11/2,0,L7+L6+L5
+
+*DO,docont,1,5,1
+    L,kcont + docont,kcont + docont + 1
+*ENDDO
+L,kcont+6,kcont+1
+
+AL,ALL
+
+CM,RESIN_A,AREA
+
+
+!! Resin - Volume
+ALLSEL,ALL
+*GET,kcont,KP,ALL,NXTL
+*GET,lcont,LINE,ALL,NXTL
+*GET,acont,AREA,ALL,NXTL
+*GET,vcont,VOLU,ALL,NXTL
+KSEL,NONE
+LSEL,NONE
+ASEL,NONE
+VSEL,NONE
+
+k,kcont+1,0,0,0
+k,kcont+2,0,0,L7+L6+L5
+
+
+CMSEL,S,RESIN_A,VOLU
+LSLA,A
+KSLL,A
+VROTAT,RESIN_A,,,,,,kcont+1,kcont+2,REV_ANG,
+VROTAT,RESIN_A,,,,,,kcont+2,kcont+1,REV_ANG,
+VADD,ALL,
+CM,RESIN_V,VOLUME
+
+ALLSEL,ALL 
+
+!! Central Tube - Area
+*GET,kcont,KP,ALL,NXTL
+*GET,lcont,LINE,ALL,NXTL
+*GET,acont,AREA,ALL,NXTL
+*GET,vcont,VOLU,ALL,NXTL
+KSEL,NONE
+LSEL,NONE
+ASEL,NONE
+VSEL,NONE
+
+CSYS,0  
+WPCSYS,-1
+
+K,kcont+1,D10/2,0,0
+K,kcont+2,D11/2,0,0
+K,kcont+3,D11/2,0,L7
+K,kcont+4,D11/2,0,L10
+K,kcont+5,D10/2,0,L10
+K,kcont+6,D10/2,0,L7
+
+*DO,docont,1,5,1
+    L,kcont+docont,kcont+docont + 1
+*ENDDO
+L,kcont+6,kcont+1
+
+AL,ALL
+CM,CTUBE_A,AREA
+
+!! Central Tube - Volume
+*GET,kcont,KP,ALL,NXTL
+*GET,lcont,LINE,ALL,NXTL
+
+k,kcont+1,0,0,0
+k,kcont+2,0,0,1
+
+VSEL,NONE
+VROTAT,CTUBE_A,,,,,,kcont+1,kcont+2,REV_ANG,
+VROTAT,CTUBE_A,,,,,,kcont+2,kcont+1,REV_ANG,
+VADD,ALL,
+
+CM,CTUBE_V,VOLUME
+
+CSYS,1 
+WPCSYS,-1
+
+CMSEL,S,CTUBE_V,VOLUME
+ASLV
+ASEL,R,LOC,Y,REV_ANG
+CM,CTUBEALAT1,AREA
+
+CMSEL,S,CTUBE_V,VOLUME
+ASLV
+ASEL,R,LOC,Y,-REV_ANG
+CM,CTUBEALAT2,AREA
+
+ALLSEL,ALL
+
+
+!! Boolean Operation - Resin and Tube
+VSBV,RESIN_V,TUBE_V,SEPO,DELETE,KEEP
+CMSEL,U,TUBE_V
+CMSEL,U,TUBE_I_V
+CMSEL,U,CTUBE_V
+CM,RESIN_V,VOLUME
+
+CMSEL,A,TUBE_I_V,VOLU
+VSBV,RESIN_V,TUBE_I_V,SEPO,DELETE,DELETE
+CM,RESIN_V,VOLU
+
+ALLSEL,ALL
+
+
+!! Merge - Central Tube and Resin
+KSEL,NONE
+LSEL,NONE
+ASEL,NONE
+VSEL,NONE
+
+CSYS,1  
+WPCSYS,-1
+
+CMSEL,S,RESIN_V,VOLU
+CMSEL,A,CTUBE_V,VOLU
+ASLV
+ASEL,R,LOC,X,D11/2
+ASEL,R,LOC,Z,L7,L10
+LSLA
+KSLL
+NUMMRG,ALL
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!       MESHING        !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! Resin - Lateral areas meshing with MESH200
+ET,1,MESH200
+KEYOPT,1,1,7
+KEYOPT,1,2,0
+
+CSYS,1
+WPCSYS,-1
+
+CMSEL,S,RESIN_V
+ASLV,S
+ASEL,R,LOC,Y,REV_ANG-1e-5,REV_ANG+1e-5
+CM,ALAT1,AREA
+LSLA,S
+LSEL,U,LOC,Z,L7-1e-5,L7+1e-5
+LSEL,U,LOC,Z,L7+L6+L5-1e-5,L7+L6+L5+1e-5
+LSEL,U,LOC,X,D11/2
+LCCAT,ALL
+LSLA,S
+LSEL,R,LOC,Z,L7-1e-5,L7+1e-5
+LCCAT,ALL
+
+
+CMSEL,S,RESIN_V
+ASLV,S
+ASEL,R,LOC,Y,-REV_ANG-1e-5,-REV_ANG+1e-5
+CM,ALAT2,AREA
+LSLA,S
+LSEL,U,LOC,Z,L7-1e-5,L7+1e-5
+LSEL,U,LOC,Z,L7+L6+L5-1e-5,L7+L6+L5+1e-5
+LSEL,U,LOC,X,D11/2
+LCCAT,ALL
+LSLA,S
+LSEL,R,LOC,Z,L7-1e-5,L7+1e-5
+LCCAT,ALL
+
+
+ASEL,NONE
+CMSEL,A,ALAT1,AREA
+CMSEL,A,ALAT2,AREA
+LSLA,S
+LSEL,R,LOC,X,D11/2
+!NDIV: Width
+LESIZE,ALL,,,16
+LSLA,S
+LSEL,R,LOC,Z,L7+L6+L5-1e-5,L7+L6+L5+1e-5
+!NDIV: Height
+LESIZE,ALL,,,8
+
+MAT,
+TYPE,1
+MSHKEY,1
+AMESH,ALL
+
+
+!! Resin - Central area meshing with MESH200 28 30 31 37
+ALLSEL,ALL
+CMSEL,S,RESIN_V
+ASLV,S
+CMSEL,U,ALAT1
+CMSEL,U,ALAT2
+
+ASEL,U,LOC,Z,L7-1e-5,L7+1e-5
+ASEL,U,LOC,Z,L7+L6+L5-1e-5,L7+L6+L5+1e-5
+ASEL,U,LOC,X,D11/2
+ASEL,U,LOC,X,D2/2-tan(A1*PI/180)*L6,D2/2
+CM,RESIN_AREAS_CONTACT_WITH_PIPE,AREA
+
+MAT,4
+TYPE,1
+MSHKEY,1
+
+!NDIV: Axial
+LSLA,S
+LSEL,U,LOC,Z,L7
+LSEL,U,LOC,Z,L7+L6+L5
+LSEL,U,LOC,Z,LTT1
+LSEL,U,LOC,Z,LTT1+LTT2
+CM,LONG_LINES,LINE
+LESIZE,ALL,5
+
+!NDIV: Longitudinal
+LSLA,S
+CMSEL,U,LONG_LINES,LINE
+LESIZE,ALL,0.5
+
+AMESH,ALL
+
+CMSEL,S,RESIN_V,VOLU
+ASLV
+ASEL,R,LOC,X,D11/2
+AESIZE,ALL,2.0
+AMESH,ALL
+
+!! Resin - Volume meshing SOLID186
+ET,2,SOLID186
+
+ALLSEL,ALL
+CMSEL,R,RESIN_V
+ASLV,R
+MAT,4
+TYPE,2
+MSHKEY,0
+
+!NDIV: Volume
+ESIZE,20
+
+MSHAPE,1,3D 
+VMESH,ALL
+
+!! Tube - Volume meshing with SOLID186
+ALLSEL,ALL
+CMSEL,R,TUBE_V
+ASLV,R
+
+CSYS,0
+WPCSYS,-1
+
+MAT,2
+TYPE,2
+MSHKEY,1
+
+!NDIV: Radial
+LSEL,R,LOC,Z,0
+LSEL,R,LOC,Y,0
+LESIZE,ALL,,,3
+
+!NDIV: Longitudinal (Inlet)
+LSLA
+LSEL,R,LOC,Z,0
+LSEL,U,LOC,Y,0
+LSEL,U,LOC,X,DT1/2
+LESIZE,ALL,,,20
+
+!NDIV: Axial
+LSLA
+LSEL,U,LOC,Z,0
+LSEL,U,LOC,Z,LTT1+LTT2+LTT3
+LESIZE,ALL,5
+
+ESIZE,
+MSHAPE,0,3D 
+VMESH,ALL
+
+
+
+!! Central Tube - Volume meshing with SOLID186
+
+CMSEL,S,CTUBE_V,VOLU
+ASLV,S
+CSYS,1
+WPCSYS,-1
+ASEL,R,LOC,X,D11/2
+AESIZE,ALL,30.0
+TYPE,1
+AMESH,ALL
+
+CMSEL,S,CTUBEALAT1,AREA
+CMSEL,A,CTUBEALAT2,AREA
+LSLA,S
+TYPE,1
+LCCAT,65,91
+LCCAT,94,95
+LCCAT,60,79
+LCCAT,82,83
+
+AESIZE,ALL,1.0
+AMESH,ALL
+
+TYPE,2
+MSHKEY,0
+MSHAPE,1,3D
+VMESH,CTUBE_V
+
+
+ASLV,S
+CSYS,1
+WPCSYS,-1
+ASEL,R,LOC,X,D11/2
+ACCAT,ALL
+
+ASLV,S
+CSYS,1
+WPCSYS,-1
+ASEL,R,LOC,X,D10/2
+ACCAT,ALL
+
+ASLV,S
+ASEL,R,LOC,Z,0.0
+ACCAT,ALL
+ASLV,S
+ASEL,R,LOC,Z,L5+L6+L7
+ACCAT,ALL
+
+MAT,3
+TYPE,2
+MSHKEY,1
+MSHAPE,0,3D 
+!ESIZE,10
+VMESH,ALL
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!       CONTACT        !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!! TUBE and RESIN !!!
+
+
+!! Selecting Areas - Tube
+ALLSEL,ALL
+CMSEL,S,TUBE_V,VOLUME
+ASLV
+ASEL,R,EXT
+ASEL,U,LOC,Z,0
+ASEL,U,LOC,Z,LTT1+LTT2+LTT3
+ASEL,U,AREA,,5
+ASEL,U,AREA,,13
+ASEL,U,AREA,,17
+ASEL,U,AREA,,20
+CM,TUBE_AREAS_CONTACT_WITH_RESIN,AREA
+
+!! Defining elements, real constant and material.
+MAT,101   
+R,3
+REAL,3
+ET,3,170
+ET,4,174
+
+!! Generate the target surface 
+TYPE,3 
+CMSEL,S,RESIN_AREAS_CONTACT_WITH_PIPE 
+NSLA,S,1
+ESLN,S,0
+ESURF
+
+!! Generate the contact surface  
+TYPE,4
+CMSEL,S,TUBE_AREAS_CONTACT_WITH_RESIN  
+NSLA,S,1
+ESLN,S,0
+ESURF  
+
+ALLSEL,ALL
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  BOUNDARY CONDITIONS !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!! Armour Pot Constraint
+CSYS,1
+WPCSYS,-1
+
+CMSEL,S,RESIN_V
+ASLV,S
+CMSEL,U,RESIN_AREAS_CONTACT_WITH_PIPE
+ASEL,R,LOC,X,D6/2,D2/2
+ASEL,U,LOC,Z,L5+L6+L7
+CM,RESIN_CONSTRAINT,AREA
+
+DA,RESIN_CONSTRAINT,ALL,0
+
+! !!!!!!!!!!!!!!!!!!!!!!!!!!
+! !!     DISPLACEMENT     !!
+! !!!!!!!!!!!!!!!!!!!!!!!!!!
+! CSYS,1
+! WPCSYS,-1
+
+! CMSEL,S,TUBE_V
+! ASLV,S
+! ASEL,R,LOC,Z,0
+! CM,TUBE_DISPLACEMENT,AREA
+
+! DA,TUBE_DISPLACEMENT,UZ,-5
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!       COUPLING       !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+CMSEL,S,ALAT1,AREA
+CMSEL,A,CTUBEALAT1,AREA
+NSLA,S,1
+
+*GET,nnodes,NODE,,COUNT
+*GET,N1,NODE,ALL,NXTH
+
+TOLL = 1E-3
+
+*DO,i,1,nnodes
+		
+	CSYS,1
+	WPCSYS,-1
+
+	NXX = NX(N1)
+	NYY = NY(N1)
+	NZZ = NZ(N1)
+	
+	CMSEL,S,ALAT2,AREA
+	CMSEL,A,CTUBEALAT2,AREA
+	NSLA,S,1
+	
+	NSEL,R,LOC,X,NXX-TOLL,NXX+TOLL	
+	NSEL,R,LOC,Z,NZZ-TOLL,NZZ+TOLL
+	*GET,N2,NODE,ALL,NXTH
+	
+	NSEL,A,,,N1
+	
+	CP,NEXT,ALL,N1,N2	
+		
+	CMSEL,S,ALAT1,AREA
+	CMSEL,A,CTUBEALAT1,AREA
+	NSLA,S,1
+	*GET,N1,NODE,N1,NXTH
+*ENDDO
+
+! CMSEL,S,ALAT1,AREA
+! CMSEL,A,ALAT2,AREA
+! NSLA,S,14
+
+ALLSEL,ALL
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!       SOLUTION       !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+/SOLU
+TIME,1
+ANTYPE,0
+
+!!   TEMPERATURE LOAD   !!
+CSYS,1
+WPCSYS,-1
+CMSEL,S,RESIN_V
+BFV,ALL,TEMP,100-40
+
+
+ALLSEL,ALL
+SBCTRAN
+
+OUTRES,ALL,ALL
+NSUBST,20,1e6,1
+NROPT,UNSYM
+NLGEOM,ON
+SOLVE
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!       SOLUTION       !!
+!!!!!!!!!!!!!!!!!!!!!!!!!! 
+/SOLU
+TIME,2
+
+!!     DISPLACEMENT     !!
+CSYS,1
+WPCSYS,-1
+CMSEL,S,TUBE_V
+ASLV,S
+ASEL,R,LOC,Z,0
+CM,TUBE_DISPLACEMENT,AREA
+DA,TUBE_DISPLACEMENT,UZ,-5
+
+ALLSEL,ALL
+SBCTRAN
+
+OUTRES,ALL,ALL
+NSUBST,20,1e6,1
+NROPT,UNSYM
+NLGEOM,ON
+SOLVE
